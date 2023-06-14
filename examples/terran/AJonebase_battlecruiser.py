@@ -139,6 +139,138 @@ class BCRushBot(BotAI):
                 (addon_position + Point2((x - 0.5, y - 0.5))).rounded for x in range(0, 2) for y in range(0, 2)
             ]
             return addon_points
+        # Lower all depots when finished
+        for depot in self.structures(UnitTypeId.SUPPLYDEPOT).ready:
+            depot(AbilityId.MORPH_SUPPLYDEPOT_LOWER)
+
+        # Morph commandcenter to orbitalcommand
+        # Check if tech requirement for orbital is complete (e.g. you need a barracks to be able to morph an orbital)
+        orbital_tech_requirement: float = self.tech_requirement_progress(UnitTypeId.ORBITALCOMMAND)
+        if orbital_tech_requirement == 1:
+            # Loop over all idle command centers (CCs that are not building SCVs or morphing to orbital)
+            for cc in self.townhalls(UnitTypeId.COMMANDCENTER).idle:
+                # Check if we have 150 minerals; this used to be an issue when the API returned 550 (value) of the orbital, but we only wanted the 150 minerals morph cost
+                if self.can_afford(UnitTypeId.ORBITALCOMMAND):
+                    cc(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)
+
+        # Expand if we can afford (400 minerals) and have less than 2 bases
+        if (
+            1 <= self.townhalls.amount < 2 and self.already_pending(UnitTypeId.COMMANDCENTER) == 0
+            and self.can_afford(UnitTypeId.COMMANDCENTER)
+        ):
+            # get_next_expansion returns the position of the next possible expansion location where you can place a command center
+            location: Point2 = await self.get_next_expansion()
+            if location:
+                # Now we "select" (or choose) the nearest worker to that found location
+                worker: Unit = self.select_build_worker(location)
+                if worker and self.can_afford(UnitTypeId.COMMANDCENTER):
+                    # The worker will be commanded to build the command center
+                    worker.build(UnitTypeId.COMMANDCENTER, location)
+                            # Make scvs until 22, usually you only need 1:1 mineral:gas ratio for reapers, but if you don't lose any then you will need additional depots (mule income should take care of that)
+        # Stop scv production when barracks is complete but we still have a command center (priotize morphing to orbital command)
+    # pylint: disable=R0916
+        if (
+            self.can_afford(UnitTypeId.SCV) and self.supply_left > 0 and self.supply_workers < 22 and (
+                self.structures(UnitTypeId.FACTORY).ready.amount < 1 and self.townhalls(UnitTypeId.COMMANDCENTER).idle
+                or self.townhalls(UnitTypeId.ORBITALCOMMAND).idle
+            )
+        ):
+            for th in self.townhalls.idle:
+                th.train(UnitTypeId.SCV)
+
+        # Make reapers if we can afford them and we have supply remaining
+        if self.supply_left > 0:
+            # Loop through all idle barracks
+            for rax in self.structures(UnitTypeId.FACTORY).idle:
+                if self.can_afford(UnitTypeId.SIEGETANK):
+                    rax.train(UnitTypeId.SIEGETANK)
+                            # Reaper micro
+        enemies: Units = self.enemy_units | self.enemy_structures
+        enemies_can_attack: Units = enemies.filter(lambda unit: unit.can_attack_ground)
+        for r in self.units(UnitTypeId.REAPER):
+
+            # Move to range 15 of closest unit if reaper is below 20 hp and not regenerating
+            enemy_threats_close: Units = enemies_can_attack.filter(
+                lambda unit: unit.distance_to(r) < 15
+            )  # Threats that can attack the reaper
+
+            if r.health_percentage < 2 / 5 and enemy_threats_close:
+                retreat_points: Set[Point2] = self.neighbors8(r.position,
+                                                              distance=2) | self.neighbors8(r.position, distance=4)
+                # Filter points that are pathable
+                retreat_points: Set[Point2] = {x for x in retreat_points if self.in_pathing_grid(x)}
+                if retreat_points:
+                    closest_enemy: Unit = enemy_threats_close.closest_to(r)
+                    retreat_point: Unit = closest_enemy.position.furthest(retreat_points)
+                    r.move(retreat_point)
+                    continue  # Continue for loop, dont execute any of the following
+
+            # Reaper is ready to attack, shoot nearest ground unit
+            enemy_ground_units: Units = enemies.filter(
+                lambda unit: unit.distance_to(r) < 5 and not unit.is_flying
+            )  # Hardcoded attackrange of 5
+            if r.weapon_cooldown == 0 and enemy_ground_units:
+                enemy_ground_units: Units = enemy_ground_units.sorted(lambda x: x.distance_to(r))
+                closest_enemy: Unit = enemy_ground_units[0]
+                r.attack(closest_enemy)
+                continue  # Continue for loop, dont execute any of the following
+
+            # Attack is on cooldown, check if grenade is on cooldown, if not then throw it to furthest enemy in range 5
+            # pylint: disable=W0212
+            reaper_grenade_range: float = (
+                self.game_data.abilities[AbilityId.KD8CHARGE_KD8CHARGE.value]._proto.cast_range
+            )
+            enemy_ground_units_in_grenade_range: Units = enemies_can_attack.filter(
+                lambda unit: not unit.is_structure and not unit.is_flying and unit.type_id not in
+                {UnitTypeId.LARVA, UnitTypeId.EGG} and unit.distance_to(r) < reaper_grenade_range
+            )
+            if enemy_ground_units_in_grenade_range and (r.is_attacking or r.is_moving):
+                # If AbilityId.KD8CHARGE_KD8CHARGE in abilities, we check that to see if the reaper grenade is off cooldown
+                abilities = await self.get_available_abilities(r)
+                enemy_ground_units_in_grenade_range = enemy_ground_units_in_grenade_range.sorted(
+                    lambda x: x.distance_to(r), reverse=True
+                )
+                furthest_enemy: Unit = None
+                for enemy in enemy_ground_units_in_grenade_range:
+                    if await self.can_cast(r, AbilityId.KD8CHARGE_KD8CHARGE, enemy, cached_abilities_of_unit=abilities):
+                        furthest_enemy: Unit = enemy
+                        break
+                if furthest_enemy:
+                    r(AbilityId.KD8CHARGE_KD8CHARGE, furthest_enemy)
+                    continue  # Continue for loop, don't execute any of the following
+
+            # Move to max unit range if enemy is closer than 4
+            enemy_threats_very_close: Units = enemies.filter(
+                lambda unit: unit.can_attack_ground and unit.distance_to(r) < 4.5
+            )  # Hardcoded attackrange minus 0.5
+            # Threats that can attack the reaper
+            if r.weapon_cooldown != 0 and enemy_threats_very_close:
+                retreat_points: Set[Point2] = self.neighbors8(r.position,
+                                                              distance=2) | self.neighbors8(r.position, distance=4)
+                # Filter points that are pathable by a reaper
+                retreat_points: Set[Point2] = {x for x in retreat_points if self.in_pathing_grid(x)}
+                if retreat_points:
+                    closest_enemy: Unit = enemy_threats_very_close.closest_to(r)
+                    retreat_point: Point2 = max(
+                        retreat_points, key=lambda x: x.distance_to(closest_enemy) - x.distance_to(r)
+                    )
+                    r.move(retreat_point)
+                    continue  # Continue for loop, don't execute any of the following
+                            # Move to nearest enemy ground unit/building because no enemy unit is closer than 5
+            all_enemy_ground_units: Units = self.enemy_units.not_flying
+            if all_enemy_ground_units:
+                closest_enemy: Unit = all_enemy_ground_units.closest_to(r)
+                r.move(closest_enemy)
+                continue  # Continue for loop, don't execute any of the following
+
+            # Move to random enemy start location if no enemy buildings have been seen
+            r.move(random.choice(self.enemy_start_locations))
+                    # Manage orbital energy and drop mules
+        for oc in self.townhalls(UnitTypeId.ORBITALCOMMAND).filter(lambda x: x.energy >= 50):
+            mfs: Units = self.mineral_field.closer_than(10, oc)
+            if mfs:
+                mf: Unit = max(mfs, key=lambda x: x.mineral_contents)
+                oc(AbilityId.CALLDOWNMULE_CALLDOWNMULE, mf)
 
         # Build starport techlab or lift if no room to build techlab
         sp: Unit
@@ -206,9 +338,9 @@ def main():
             #Human(Race.Terran),
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
-            Computer(Race.Terran, Difficulty.VeryHard),
-           # Computer(Race.Zerg, Difficulty.VeryHard),
-           # Computer(Race.Zerg, Difficulty.VeryHard),
+            #Computer(Race.Terran, Difficulty.VeryHard),
+            Computer(Race.Zerg, Difficulty.VeryHard),
+            Computer(Race.Zerg, Difficulty.VeryHard),
         ],
         realtime=False,
     )
