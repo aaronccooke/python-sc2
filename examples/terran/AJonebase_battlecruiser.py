@@ -1,5 +1,6 @@
+from pickle import FALSE
 from typing import List, Tuple
-
+from typing import Set
 from sc2 import maps
 from sc2.bot_ai import BotAI
 from sc2.data import Difficulty, Race
@@ -21,8 +22,25 @@ class BCRushBot(BotAI):
         target_position = Point2((random.randint(0, map_width), random.randint(0, map_height)))
         return target_position
 
+    @staticmethod
+    def neighbors4(position, distance=1) -> Set[Point2]:
+        p = position
+        d = distance
+        return {Point2((p.x - d, p.y)), Point2((p.x + d, p.y)), Point2((p.x, p.y - d)), Point2((p.x, p.y + d))}
 
+        # Stolen and modified from position.py
+    def neighbors8(self, position, distance=1) -> Set[Point2]:
+        p = position
+        d = distance
+        
+        return self.neighbors4(position, distance) | {
+            Point2((p.x - d, p.y - d)),
+            Point2((p.x - d, p.y + d)),
+            Point2((p.x + d, p.y - d)),
+            Point2((p.x + d, p.y + d)),
+        }
 
+    
     def select_target(self) -> Tuple[Point2, bool]:
         """ Select an enemy target the units should attack. """
         enemy_structures: List[Unit] = self.enemy_structures
@@ -79,6 +97,10 @@ class BCRushBot(BotAI):
                         if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
+            elif self.can_afford(UnitTypeId.REAPER):
+                for sp in self.structures(UnitTypeId.BARRACKS).idle:
+                    sp.train(UnitTypeId.REAPER)
+                    sp.move(random.choice(self.enemy_start_locations))
             else:
                 # Build Marines instead
                 if self.can_afford(UnitTypeId.MARINE):
@@ -339,8 +361,8 @@ def main():
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
             #Computer(Race.Terran, Difficulty.VeryHard),
-            Computer(Race.Zerg, Difficulty.VeryHard),
-            Computer(Race.Zerg, Difficulty.VeryHard),
+            Computer(Race.Protoss, Difficulty.VeryHard),
+            #Computer(Race.Zerg, Difficulty.VeryHard),
         ],
         realtime=False,
     )
