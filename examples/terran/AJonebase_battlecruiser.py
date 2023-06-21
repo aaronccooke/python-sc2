@@ -15,6 +15,7 @@ import random
 
 
 class BCRushBot(BotAI):
+    reaper_visited_bases = set()
     def random_location_on_map(self) -> Point2:
         """ Returns a random location on the map. """
         map_width = self.game_info.map_size[0]
@@ -22,6 +23,7 @@ class BCRushBot(BotAI):
         target_position = Point2((random.randint(0, map_width), random.randint(0, map_height)))
         return target_position
 
+    
     @staticmethod
     def neighbors4(position, distance=1) -> Set[Point2]:
         p = position
@@ -209,6 +211,11 @@ class BCRushBot(BotAI):
                             # Reaper micro
         enemies: Units = self.enemy_units | self.enemy_structures
         enemies_can_attack: Units = enemies.filter(lambda unit: unit.can_attack_ground)
+
+
+        # Add this instance variable outside the loop
+        
+
         for r in self.units(UnitTypeId.REAPER):
 
             # Move to range 15 of closest unit if reaper is below 20 hp and not regenerating
@@ -217,8 +224,8 @@ class BCRushBot(BotAI):
             )  # Threats that can attack the reaper
 
             if r.health_percentage < 2 / 5 and enemy_threats_close:
-                retreat_points: Set[Point2] = self.neighbors8(r.position,
-                                                              distance=2) | self.neighbors8(r.position, distance=4)
+                retreat_points: Set[Point2] = self.neighbors8(r.position, distance=2) | self.neighbors8(r.position,
+                                                                                                        distance=4)
                 # Filter points that are pathable
                 retreat_points: Set[Point2] = {x for x in retreat_points if self.in_pathing_grid(x)}
                 if retreat_points:
@@ -267,8 +274,8 @@ class BCRushBot(BotAI):
             )  # Hardcoded attackrange minus 0.5
             # Threats that can attack the reaper
             if r.weapon_cooldown != 0 and enemy_threats_very_close:
-                retreat_points: Set[Point2] = self.neighbors8(r.position,
-                                                              distance=2) | self.neighbors8(r.position, distance=4)
+                retreat_points: Set[Point2] = self.neighbors8(r.position, distance=2) | self.neighbors8(r.position,
+                                                                                                        distance=4)
                 # Filter points that are pathable by a reaper
                 retreat_points: Set[Point2] = {x for x in retreat_points if self.in_pathing_grid(x)}
                 if retreat_points:
@@ -286,7 +293,15 @@ class BCRushBot(BotAI):
                 continue  # Continue for loop, don't execute any of the following
 
             # Move to random enemy start location if no enemy buildings have been seen
-            r.move(random.choice(self.enemy_start_locations))
+            if r.is_idle:
+                unvisited_bases = self.enemy_start_locations - self.reaper_visited_bases
+                if unvisited_bases:
+                    target_base = random.choice(list(unvisited_bases))
+                    self.reaper_visited_bases.add(target_base)
+                    r.move(target_base)
+                else:
+                    self.reaper_visited_bases = set()
+
                     # Manage orbital energy and drop mules
         for oc in self.townhalls(UnitTypeId.ORBITALCOMMAND).filter(lambda x: x.energy >= 50):
             mfs: Units = self.mineral_field.closer_than(10, oc)
@@ -361,8 +376,9 @@ def main():
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
             #Computer(Race.Terran, Difficulty.VeryHard),
-            Computer(Race.Protoss, Difficulty.VeryHard),
+            #Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
+            Computer(Race.Zerg, Difficulty.VeryHard),
         ],
         realtime=False,
     )
