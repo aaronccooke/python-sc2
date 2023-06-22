@@ -59,7 +59,14 @@ class BCRushBot(BotAI):
         target_position = self.random_location_on_map()
         return target_position, True
 
-
+    def factory_points_to_build_addon(self, sp_position: Point2) -> List[Point2]:
+        """ Return all points that need to be checked when trying to build an addon. Returns 4 points. """
+        addon_offset: Point2 = Point2((2.5, -0.5))
+        addon_position: Point2 = sp_position + addon_offset
+        addon_points = [
+            (addon_position + Point2((x - 0.5, y - 0.5))).rounded for x in range(0, 2) for y in range(0, 2)
+        ]
+        return addon_points
     # pylint: disable=R0912
     async def on_step(self, iteration):
         ccs: Units = self.townhalls
@@ -99,7 +106,7 @@ class BCRushBot(BotAI):
                         if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
-            elif self.can_afford(UnitTypeId.REAPER):
+            elif self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 10:
                 for sp in self.structures(UnitTypeId.BARRACKS).idle:
                     sp.train(UnitTypeId.REAPER)
                     sp.move(random.choice(self.enemy_start_locations))
@@ -136,13 +143,25 @@ class BCRushBot(BotAI):
 
                         worker.build_gas(vg)
                         break
-
+            
             # Build factory if we dont have one
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 factories: Units = self.structures(UnitTypeId.FACTORY)
                 if not factories:
                     if self.can_afford(UnitTypeId.FACTORY):
                         await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
+            
+            f: Unit
+            for f in self.structures(UnitTypeId.FACTORY).ready.idle:
+                if not f.has_add_on and self.can_afford(UnitTypeId.FACTORYTECHLAB):
+                    addon_points = self.factory_points_to_build_addon(f.position)
+                    if all(
+                        self.in_map_bounds(addon_point) and self.in_placement_grid(addon_point)
+                        and self.in_pathing_grid(addon_point) for addon_point in addon_points
+                    ):
+                        f.build(UnitTypeId.FACTORYTECHLAB)
+                    else:
+                        f(AbilityId.LIFT)
                 # Build starport once we can build starports, up to 2
                 elif (
                     factories.ready
@@ -154,7 +173,6 @@ class BCRushBot(BotAI):
                             UnitTypeId.STARPORT,
                             near=cc.position.towards(self.game_info.map_center, 15).random_on_distance(8),
                         )
-
         def starport_points_to_build_addon(sp_position: Point2) -> List[Point2]:
             """ Return all points that need to be checked when trying to build an addon. Returns 4 points. """
             addon_offset: Point2 = Point2((2.5, -0.5))
@@ -201,12 +219,11 @@ class BCRushBot(BotAI):
         ):
             for th in self.townhalls.idle:
                 th.train(UnitTypeId.SCV)
-
         # Make reapers if we can afford them and we have supply remaining
         if self.supply_left > 0:
             # Loop through all idle barracks
-            for rax in self.structures(UnitTypeId.FACTORY).idle:
-                if self.can_afford(UnitTypeId.SIEGETANK):
+            if self.can_afford(UnitTypeId.SIEGETANK):
+                for rax in self.structures(UnitTypeId.FACTORY).idle:
                     rax.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
         enemies: Units = self.enemy_units | self.enemy_structures
@@ -376,8 +393,8 @@ def main():
             #Human(Race.Terran),
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
-            #Computer(Race.Terran, Difficulty.VeryHard),
-            #Computer(Race.Protoss, Difficulty.VeryHard),
+            Computer(Race.Terran, Difficulty.VeryHard),
+            Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
             Computer(Race.Zerg, Difficulty.VeryHard),
         ],
