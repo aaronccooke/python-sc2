@@ -291,12 +291,13 @@ class BCRushBot(BotAI):
                 closest_enemy: Unit = all_enemy_ground_units.closest_to(r)
                 r.move(closest_enemy)
                 continue  # Continue for loop, don't execute any of the following
-
+            enemy_start_locations_set = set(self.enemy_start_locations)
+            reaper_visited_bases_set = set(self.reaper_visited_bases)
             # Move to random enemy start location if no enemy buildings have been seen
             if r.is_idle:
-                unvisited_bases = self.enemy_start_locations - self.reaper_visited_bases
-                if unvisited_bases:
-                    target_base = random.choice(list(unvisited_bases))
+                unvisited_bases_set = enemy_start_locations_set.union(reaper_visited_bases_set)
+                if unvisited_bases_set:
+                    target_base = random.choice(list(unvisited_bases_set))
                     self.reaper_visited_bases.add(target_base)
                     r.move(target_base)
                 else:
