@@ -92,26 +92,38 @@ class BCRushBot(BotAI):
                 # Order the BC to move to the target, and once the select_target returns an attack-target, change it to attack-move
                 elif bc.is_idle:
                     bc.move(target)
-
+                # Send all Siege Tanks to attack a target.
+        tanks: Units = self.units(UnitTypeId.SIEGETANK)
+        if tanks:
+            target, target_is_enemy_unit = self.select_target()
+            tank: Unit
+            for tank in tanks:
+                # Order the Siege Tank to attack-move the target while in siege mode
+                if target_is_enemy_unit and (tank.is_idle or tank.is_moving):
+                    tank(AbilityId.SIEGEMODE_SIEGEMODE)
+                    tank.attack(target)
+                # Order the Siege Tank to move to the target, and once the select_target returns an attack-target, change it to attack-move in siege mode
+                elif tank.is_idle:
+                    tank.move(target)
         # Build more SCVs until 22
         if self.can_afford(UnitTypeId.SCV) and self.supply_workers < 22 and cc.is_idle:
             cc.train(UnitTypeId.SCV)
 
-        building_bcs = self.units(UnitTypeId.BATTLECRUISER).not_ready
-        if not building_bcs:
-            # Build more BCs
-            if self.structures(UnitTypeId.FUSIONCORE) and self.can_afford(UnitTypeId.BATTLECRUISER):
-                for sp in self.structures(UnitTypeId.STARPORT).idle:
-                    if sp.has_add_on:
-                        if not self.can_afford(UnitTypeId.BATTLECRUISER):
-                            break
-                        sp.train(UnitTypeId.BATTLECRUISER)
-            elif self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 10:
+                # # building_bcs = self.units(UnitTypeId.BATTLECRUISER).not_ready
+                # # if not building_bcs:
+                # #     # Build more BCs
+                # #     # if self.structures(UnitTypeId.FUSIONCORE) and self.can_afford(UnitTypeId.BATTLECRUISER):
+                # #     #     for sp in self.structures(UnitTypeId.STARPORT).idle:
+                # #     #         if sp.has_add_on:
+                # #     #             if not self.can_afford(UnitTypeId.BATTLECRUISER):
+                # #     #                 break
+                #         sp.train(UnitTypeId.BATTLECRUISER)
+            if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 4:
                 for sp in self.structures(UnitTypeId.BARRACKS).idle:
                     sp.train(UnitTypeId.REAPER)
                     sp.move(random.choice(self.enemy_start_locations))
             else:
-                # Build Marines instead
+                 # Build Marines instead
                 if self.can_afford(UnitTypeId.MARINE):
                     for rax in self.structures(UnitTypeId.BARRACKS).idle:
                         if not self.can_afford(UnitTypeId.MARINE):
@@ -145,8 +157,9 @@ class BCRushBot(BotAI):
                         break
             
             # Build factory if we dont have one
+            factories: Units = self.structures(UnitTypeId.FACTORY)
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
-                factories: Units = self.structures(UnitTypeId.FACTORY)
+                
                 if not factories:
                     if self.can_afford(UnitTypeId.FACTORY):
                         await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
