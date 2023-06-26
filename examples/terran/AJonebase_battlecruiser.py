@@ -109,26 +109,30 @@ class BCRushBot(BotAI):
         if self.can_afford(UnitTypeId.SCV) and self.supply_workers < 22 and cc.is_idle:
             cc.train(UnitTypeId.SCV)
 
-                # # building_bcs = self.units(UnitTypeId.BATTLECRUISER).not_ready
-                # # if not building_bcs:
-                # #     # Build more BCs
-                # #     # if self.structures(UnitTypeId.FUSIONCORE) and self.can_afford(UnitTypeId.BATTLECRUISER):
-                # #     #     for sp in self.structures(UnitTypeId.STARPORT).idle:
-                # #     #         if sp.has_add_on:
-                # #     #             if not self.can_afford(UnitTypeId.BATTLECRUISER):
-                # #     #                 break
-                #         sp.train(UnitTypeId.BATTLECRUISER)
-            if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 4:
-                for sp in self.structures(UnitTypeId.BARRACKS).idle:
-                    sp.train(UnitTypeId.REAPER)
-                    sp.move(random.choice(self.enemy_start_locations))
-            else:
-                 # Build Marines instead
-                if self.can_afford(UnitTypeId.MARINE):
-                    for rax in self.structures(UnitTypeId.BARRACKS).idle:
-                        if not self.can_afford(UnitTypeId.MARINE):
+        building_bcs = self.units(UnitTypeId.BATTLECRUISER).not_ready
+        if not building_bcs:
+        # Build more BCs
+            if self.structures(UnitTypeId.FUSIONCORE) and self.can_afford(UnitTypeId.BATTLECRUISER):
+                for sp in self.structures(UnitTypeId.STARPORT).idle:
+                    if sp.has_add_on:
+                        if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
-                        rax.train(UnitTypeId.MARINE)
+                        sp.train(UnitTypeId.BATTLECRUISER)
+        elif self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 4:
+            for sp in self.structures(UnitTypeId.BARRACKS).idle:
+                sp.train(UnitTypeId.REAPER)
+                sp.move(random.choice(self.enemy_start_locations))
+        else:
+                # Build Marines instead
+            if self.can_afford(UnitTypeId.MARINE):
+                for rax in self.structures(UnitTypeId.BARRACKS).idle:
+                    if not self.can_afford(UnitTypeId.MARINE):
+                        break
+                    rax.train(UnitTypeId.MARINE)
+        if self.tech_requirement_progress(UnitTypeId.MISSILETURRET):
+            if not self.structures(UnitTypeId.MISSILETURRET):
+                if self.can_afford(UnitTypeId.MISSILETURRET):
+                    await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
 
         # Build more supply depots
         if self.supply_left < 6 and self.supply_used >= 14 and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
@@ -175,6 +179,9 @@ class BCRushBot(BotAI):
                         f.build(UnitTypeId.FACTORYTECHLAB)
                     else:
                         f(AbilityId.LIFT)
+
+                        f(AbilityId.LAND,)
+                        break
                 # Build starport once we can build starports, up to 2
                 elif (
                     factories.ready
@@ -235,7 +242,7 @@ class BCRushBot(BotAI):
         # Make reapers if we can afford them and we have supply remaining
         if self.supply_left > 0:
             # Loop through all idle barracks
-            if self.can_afford(UnitTypeId.SIEGETANK):
+            if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 10:
                 for rax in self.structures(UnitTypeId.FACTORY).idle:
                     rax.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
@@ -403,11 +410,11 @@ def main():
     run_game(
         maps.get("(4)DarknessSanctuaryLE"),
         [
-            #Human(Race.Terran),
+            # Human(Race.Protoss),
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
-            Computer(Race.Terran, Difficulty.VeryHard),
-            Computer(Race.Protoss, Difficulty.VeryHard),
+            #Computer(Race.Terran, Difficulty.VeryHard),
+            #Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
             Computer(Race.Zerg, Difficulty.VeryHard),
         ],
