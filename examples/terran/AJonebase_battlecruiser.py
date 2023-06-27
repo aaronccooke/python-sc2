@@ -129,10 +129,13 @@ class BCRushBot(BotAI):
                     if not self.can_afford(UnitTypeId.MARINE):
                         break
                     rax.train(UnitTypeId.MARINE)
-        if self.tech_requirement_progress(UnitTypeId.MISSILETURRET):
-            if not self.structures(UnitTypeId.MISSILETURRET):
-                if self.can_afford(UnitTypeId.MISSILETURRET):
-                    await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
+
+        if self.can_afford(UnitTypeId.ENGINEERINGBAY):
+            await self.build(UnitTypeId.ENGINEERINGBAY, near=cc.position.towards(self.game_info.map_center, 8))      
+            
+        #Build missile turrets            
+        if self.can_afford(UnitTypeId.MISSILETURRET):
+            await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
 
         # Build more supply depots
         if self.supply_left < 6 and self.supply_used >= 14 and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
