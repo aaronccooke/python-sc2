@@ -129,13 +129,27 @@ class BCRushBot(BotAI):
                     if not self.can_afford(UnitTypeId.MARINE):
                         break
                     rax.train(UnitTypeId.MARINE)
-
-        if self.can_afford(UnitTypeId.ENGINEERINGBAY):
-            await self.build(UnitTypeId.ENGINEERINGBAY, near=cc.position.towards(self.game_info.map_center, 8))      
-            
-        #Build missile turrets            
+        engineeringbay: Units = self.structures(UnitTypeId.ENGINEERINGBAY)
+        if not engineeringbay:
+            if self.can_afford(UnitTypeId.ENGINEERINGBAY):
+                await self.build(UnitTypeId.ENGINEERINGBAY, near=cc.position.towards(self.game_info.map_center, 8)) 
+        # Build missile turrets
         if self.can_afford(UnitTypeId.MISSILETURRET):
-            await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
+            # Find the location near the siege tanks
+            tanks: Units = self.units(UnitTypeId.SIEGETANK)
+            if tanks:
+                tank_position = tanks.closest_to(cc).position
+                turret_placement = await self.find_placement(UnitTypeId.MISSILETURRET, near=tank_position, placement_step=1)
+                if turret_placement:
+                    await self.build(UnitTypeId.MISSILETURRET, near=turret_placement)
+                    # await self.build(UnitTypeId.SUPPLYDEPOT, near=cc.position.towards(self.game_info.map_center, 8))
+                else:
+                    await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
+
+            
+        # #Build missile turrets            
+        # if self.can_afford(UnitTypeId.MISSILETURRET):
+        #     await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
 
         # Build more supply depots
         if self.supply_left < 6 and self.supply_used >= 14 and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
@@ -181,10 +195,33 @@ class BCRushBot(BotAI):
                     ):
                         f.build(UnitTypeId.FACTORYTECHLAB)
                     else:
+                        # Lift off the factory
                         f(AbilityId.LIFT)
 
-                        f(AbilityId.LAND,)
+                        # Find a suitable place to land
+                        landing_location = self.find_suitable_landing_location(addon_points)
+                        if landing_location:
+                            # Land the factory at the found location
+                            f(AbilityId.LAND, landing_location)
+                        else:
+                            # No suitable landing location found, continue to the next factory
+                            continue
+
                         break
+
+            # for f in self.structures(UnitTypeId.FACTORY).ready.idle:
+            #     if not f.has_add_on and self.can_afford(UnitTypeId.FACTORYTECHLAB):
+            #         addon_points = self.factory_points_to_build_addon(f.position)
+            #         if all(
+            #             self.in_map_bounds(addon_point) and self.in_placement_grid(addon_point)
+            #             and self.in_pathing_grid(addon_point) for addon_point in addon_points
+            #         ):
+            #             f.build(UnitTypeId.FACTORYTECHLAB)
+            #         else:
+            #             f(AbilityId.LIFT)
+
+            #             f(AbilityId.LAND)
+            #             break
                 # Build starport once we can build starports, up to 2
                 elif (
                     factories.ready
