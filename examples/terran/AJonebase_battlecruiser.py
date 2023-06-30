@@ -203,11 +203,6 @@ class BCRushBot(BotAI):
                         if landing_location:
                             # Land the factory at the found location
                             f(AbilityId.LAND, landing_location)
-                        else:
-                            # No suitable landing location found, continue to the next factory
-                            continue
-
-                        break
 
             # for f in self.structures(UnitTypeId.FACTORY).ready.idle:
             #     if not f.has_add_on and self.can_afford(UnitTypeId.FACTORYTECHLAB):
