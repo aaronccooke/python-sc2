@@ -133,18 +133,33 @@ class BCRushBot(BotAI):
         if not engineeringbay:
             if self.can_afford(UnitTypeId.ENGINEERINGBAY):
                 await self.build(UnitTypeId.ENGINEERINGBAY, near=cc.position.towards(self.game_info.map_center, 8)) 
-        # Build missile turrets
-        if self.can_afford(UnitTypeId.MISSILETURRET) and self.units(UnitTypeId.MISSILETURRET).amount < 1:
+                        # Build missile turrets
+        if self.can_afford(UnitTypeId.MISSILETURRET):
             # Find the location near the siege tanks
             tanks: Units = self.units(UnitTypeId.SIEGETANK)
             if tanks:
                 tank_position = tanks.closest_to(cc).position
                 turret_placement = await self.find_placement(UnitTypeId.MISSILETURRET, near=tank_position, placement_step=1)
                 if turret_placement:
-                    await self.build(UnitTypeId.MISSILETURRET, near=turret_placement)
-                    # await self.build(UnitTypeId.SUPPLYDEPOT, near=cc.position.towards(self.game_info.map_center, 8))
+                    # Build only one missile turret next to the siege tank
+                    if self.already_pending(UnitTypeId.MISSILETURRET) < 1:
+                        await self.build(UnitTypeId.MISSILETURRET, near=turret_placement)
                 else:
+                    # Build missile turret near the command center
                     await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
+
+        # # Build missile turrets
+        # if self.can_afford(UnitTypeId.MISSILETURRET):
+        #     # Find the location near the siege tanks
+        #     tanks: Units = self.units(UnitTypeId.SIEGETANK)
+        #     if tanks:
+        #         tank_position = tanks.closest_to(cc).position
+        #         turret_placement = await self.find_placement(UnitTypeId.MISSILETURRET, near=tank_position, placement_step=1)
+        #         if turret_placement:
+        #             await self.build(UnitTypeId.MISSILETURRET, near=turret_placement)
+        #             # await self.build(UnitTypeId.SUPPLYDEPOT, near=cc.position.towards(self.game_info.map_center, 8))
+        #         else:
+        #             await self.build(UnitTypeId.MISSILETURRET, near=cc.position.towards(self.game_info.map_center, 8))
 
             
         # #Build missile turrets            
