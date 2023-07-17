@@ -134,7 +134,7 @@ class BCRushBot(BotAI):
             if self.can_afford(UnitTypeId.ENGINEERINGBAY):
                 await self.build(UnitTypeId.ENGINEERINGBAY, near=cc.position.towards(self.game_info.map_center, 8)) 
         # Build missile turrets
-        if self.can_afford(UnitTypeId.MISSILETURRET):
+        if self.can_afford(UnitTypeId.MISSILETURRET) and self.units(UnitTypeId.MISSILETURRET).amount < 1:
             # Find the location near the siege tanks
             tanks: Units = self.units(UnitTypeId.SIEGETANK)
             if tanks:
