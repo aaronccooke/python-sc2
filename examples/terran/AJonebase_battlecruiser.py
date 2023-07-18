@@ -118,13 +118,13 @@ class BCRushBot(BotAI):
                         if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
-        elif self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 4:
+        if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
             for sp in self.structures(UnitTypeId.BARRACKS).idle:
                 sp.train(UnitTypeId.REAPER)
                 sp.move(random.choice(self.enemy_start_locations))
         else:
                 # Build Marines instead
-            if self.can_afford(UnitTypeId.MARINE):
+            if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
                 for rax in self.structures(UnitTypeId.BARRACKS).idle:
                     if not self.can_afford(UnitTypeId.MARINE):
                         break
@@ -292,7 +292,7 @@ class BCRushBot(BotAI):
         # Make reapers if we can afford them and we have supply remaining
         if self.supply_left > 0:
             # Loop through all idle barracks
-            if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 10:
+            if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 5:
                 for rax in self.structures(UnitTypeId.FACTORY).idle:
                     rax.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
