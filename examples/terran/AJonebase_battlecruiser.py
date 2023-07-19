@@ -183,7 +183,7 @@ class BCRushBot(BotAI):
                     await self.build(UnitTypeId.BARRACKS, near=cc.position.towards(self.game_info.map_center, 8))
 
             # Build refineries
-            elif self.structures(UnitTypeId.BARRACKS) and self.gas_buildings.amount < 4:
+            elif self.structures(UnitTypeId.BARRACKS) and self.gas_buildings.amount < 8:
                 if self.can_afford(UnitTypeId.REFINERY):
                     vgs: Units = self.vespene_geyser.closer_than(20, cc)
                     for vg in vgs:
@@ -201,9 +201,9 @@ class BCRushBot(BotAI):
             factories: Units = self.structures(UnitTypeId.FACTORY)
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 
-                if not factories:
-                    if self.can_afford(UnitTypeId.FACTORY):
-                        await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
+
+                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 4:
+                    await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
             
             f: Unit
             for f in self.structures(UnitTypeId.FACTORY).ready.idle:
@@ -272,7 +272,7 @@ class BCRushBot(BotAI):
 
         # Expand if we can afford (400 minerals) and have less than 2 bases
         if (
-            1 <= self.townhalls.amount < 2 and self.already_pending(UnitTypeId.COMMANDCENTER) == 0
+            1 <= self.townhalls.amount < 4 and self.already_pending(UnitTypeId.COMMANDCENTER) == 0
             and self.can_afford(UnitTypeId.COMMANDCENTER)
         ):
             # get_next_expansion returns the position of the next possible expansion location where you can place a command center
@@ -469,9 +469,9 @@ def main():
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
             #Computer(Race.Terran, Difficulty.VeryHard),
-            #Computer(Race.Protoss, Difficulty.VeryHard),
+            Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
-            Computer(Race.Zerg, Difficulty.VeryHard),
+            # Computer(Race.Zerg, Difficulty.VeryHard),
         ],
         realtime=False,
     )
