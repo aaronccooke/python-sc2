@@ -11,7 +11,9 @@ from sc2.player import Bot, Computer, Human
 from sc2.position import Point2, Point3
 from sc2.unit import Unit
 from sc2.units import Units
+from sc2.constants import UnitTypeId
 import random
+
 
 
 class BCRushBot(BotAI):
@@ -118,17 +120,20 @@ class BCRushBot(BotAI):
                         if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
+
         if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
-            for sp in self.structures(UnitTypeId.BARRACKS).idle:
-                sp.train(UnitTypeId.REAPER)
-                sp.move(random.choice(self.enemy_start_locations))
-        else:
-                # Build Marines instead
-            if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
-                for rax in self.structures(UnitTypeId.BARRACKS).idle:
-                    if not self.can_afford(UnitTypeId.MARINE):
-                        break
-                    rax.train(UnitTypeId.MARINE)
+            enemy_structures = self.enemy_structures
+            if not enemy_structures:  # Check if there are no enemy structures
+                for sp in self.structures(UnitTypeId.BARRACKS).idle:
+                    sp.train(UnitTypeId.REAPER)
+                    sp.move(random.choice(self.enemy_start_locations))
+        # else:
+        #         # Build Marines instead
+        #     if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
+        #         for rax in self.structures(UnitTypeId.BARRACKS).idle:
+        #             if not self.can_afford(UnitTypeId.MARINE):
+        #                 break
+        #             rax.train(UnitTypeId.MARINE)
         engineeringbay: Units = self.structures(UnitTypeId.ENGINEERINGBAY)
         if not engineeringbay:
             if self.can_afford(UnitTypeId.ENGINEERINGBAY):
@@ -178,7 +183,7 @@ class BCRushBot(BotAI):
                     await self.build(UnitTypeId.BARRACKS, near=cc.position.towards(self.game_info.map_center, 8))
 
             # Build refineries
-            elif self.structures(UnitTypeId.BARRACKS) and self.gas_buildings.amount < 2:
+            elif self.structures(UnitTypeId.BARRACKS) and self.gas_buildings.amount < 4:
                 if self.can_afford(UnitTypeId.REFINERY):
                     vgs: Units = self.vespene_geyser.closer_than(20, cc)
                     for vg in vgs:
@@ -292,7 +297,7 @@ class BCRushBot(BotAI):
         # Make reapers if we can afford them and we have supply remaining
         if self.supply_left > 0:
             # Loop through all idle barracks
-            if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 5:
+            if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 2:
                 for rax in self.structures(UnitTypeId.FACTORY).idle:
                     rax.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
