@@ -17,6 +17,9 @@ import random
 
 
 class BCRushBot(BotAI):
+    last_command_centers = 0  # To keep track of the number of Command Centers in the previous iteration
+    factories_per_cc = 1  # Number of factories to build per Command Center
+    command_centers_tags = set()  # To store the tags of Command Centers seen so far
     reaper_visited_bases = set()
     def random_location_on_map(self) -> Point2:
         """ Returns a random location on the map. """
@@ -196,14 +199,28 @@ class BCRushBot(BotAI):
 
                         worker.build_gas(vg)
                         break
-            
-            # Build factory if we dont have one
-            factories: Units = self.structures(UnitTypeId.FACTORY)
-            if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
-                
+        
+                                # Check if there's a new Command Center constructed
+            if self.townhalls(UnitTypeId.COMMANDCENTER).amount > self.last_command_centers:
+                # Get all the newly constructed Command Centers
+                new_command_centers = self.townhalls(UnitTypeId.COMMANDCENTER).filter(lambda cc: cc.tag not in self.command_centers_tags)
+                for cc in new_command_centers:
+                    # Build a factory near the new Command Center
+                    if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < self.factories_per_cc:
+                        await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
 
-                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 4:
-                    await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
+                # Update the list of Command Center tags to track them for the next iteration
+                self.command_centers_tags = {cc.tag for cc in self.townhalls(UnitTypeId.COMMANDCENTER)}
+
+            # Your existing code here
+
+            # Store the number of Command Centers for the next iteration
+            self.last_command_centers = self.townhalls(UnitTypeId.COMMANDCENTER).amount
+
+            
+            # # Build factory if we dont have one
+            factories: Units = self.structures(UnitTypeId.FACTORY)
+            
             
             f: Unit
             for f in self.structures(UnitTypeId.FACTORY).ready.idle:
@@ -468,10 +485,10 @@ def main():
             # Human(Race.Protoss),
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
-            #Computer(Race.Terran, Difficulty.VeryHard),
+            Computer(Race.Terran, Difficulty.VeryHard),
             Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
-            # Computer(Race.Zerg, Difficulty.VeryHard),
+            Computer(Race.Zerg, Difficulty.VeryHard),
         ],
         realtime=False,
     )
