@@ -17,9 +17,6 @@ import random
 
 
 class BCRushBot(BotAI):
-    last_command_centers = 0  # To keep track of the number of Command Centers in the previous iteration
-    factories_per_cc = 1  # Number of factories to build per Command Center
-    command_centers_tags = set()  # To store the tags of Command Centers seen so far
     reaper_visited_bases = set()
     def random_location_on_map(self) -> Point2:
         """ Returns a random location on the map. """
@@ -199,28 +196,14 @@ class BCRushBot(BotAI):
 
                         worker.build_gas(vg)
                         break
-        
-                                # Check if there's a new Command Center constructed
-            if self.townhalls(UnitTypeId.COMMANDCENTER).amount > self.last_command_centers:
-                # Get all the newly constructed Command Centers
-                new_command_centers = self.townhalls(UnitTypeId.COMMANDCENTER).filter(lambda cc: cc.tag not in self.command_centers_tags)
-                for cc in new_command_centers:
-                    # Build a factory near the new Command Center
-                    if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < self.factories_per_cc:
-                        await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
-
-                # Update the list of Command Center tags to track them for the next iteration
-                self.command_centers_tags = {cc.tag for cc in self.townhalls(UnitTypeId.COMMANDCENTER)}
-
-            # Your existing code here
-
-            # Store the number of Command Centers for the next iteration
-            self.last_command_centers = self.townhalls(UnitTypeId.COMMANDCENTER).amount
-
             
-            # # Build factory if we dont have one
+            # Build factory if we dont have one
             factories: Units = self.structures(UnitTypeId.FACTORY)
-            
+            if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
+                
+
+                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 1:
+                    await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
             
             f: Unit
             for f in self.structures(UnitTypeId.FACTORY).ready.idle:
@@ -231,15 +214,6 @@ class BCRushBot(BotAI):
                         and self.in_pathing_grid(addon_point) for addon_point in addon_points
                     ):
                         f.build(UnitTypeId.FACTORYTECHLAB)
-                    else:
-                        # Lift off the factory
-                        f(AbilityId.LIFT)
-
-                        # Find a suitable place to land
-                        landing_location = self.find_suitable_landing_location(addon_points)
-                        if landing_location:
-                            # Land the factory at the found location
-                            f(AbilityId.LAND, landing_location)
 
             # for f in self.structures(UnitTypeId.FACTORY).ready.idle:
             #     if not f.has_add_on and self.can_afford(UnitTypeId.FACTORYTECHLAB):
