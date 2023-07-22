@@ -147,7 +147,7 @@ class BCRushBot(BotAI):
                 turret_placement = await self.find_placement(UnitTypeId.MISSILETURRET, near=tank_position, placement_step=1)
                 if turret_placement:
                     # Build only one missile turret next to the siege tank
-                    if self.already_pending(UnitTypeId.MISSILETURRET) < 1:
+                    if self.already_pending(UnitTypeId.MISSILETURRET) < 2:
                         await self.build(UnitTypeId.MISSILETURRET, near=turret_placement)
                 else:
                     # Build missile turret near the command center
@@ -232,7 +232,7 @@ class BCRushBot(BotAI):
                 elif (
                     factories.ready
                     and self.structures.of_type({UnitTypeId.STARPORT, UnitTypeId.STARPORTFLYING}).ready.amount +
-                    self.already_pending(UnitTypeId.STARPORT) < 2
+                    self.already_pending(UnitTypeId.STARPORT) < 4
                 ):
                     if self.can_afford(UnitTypeId.STARPORT):
                         await self.build(
@@ -285,15 +285,28 @@ class BCRushBot(BotAI):
         ):
             for th in self.townhalls.idle:
                 th.train(UnitTypeId.SCV)
-        # Make reapers if we can afford them and we have supply remaining
-        if self.supply_left > 0:
             # Loop through all idle barracks
-            if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 2:
-                for rax in self.structures(UnitTypeId.FACTORY).idle:
-                    rax.train(UnitTypeId.SIEGETANK)
+        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 15:
+            for f in self.structures(UnitTypeId.FACTORY).idle:
+                self.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
         enemies: Units = self.enemy_units | self.enemy_structures
         enemies_can_attack: Units = enemies.filter(lambda unit: unit.can_attack_ground)
+        if self.can_afford(UnitTypeId.CYCLONE):
+                for f in self.structures(UnitTypeId.FACTORY).idle:
+                    self.train(UnitTypeId.CYCLONE)
+                            # Reaper micro
+        cy: Units = self.units(UnitTypeId.CYCLONE)
+        if cy:
+            target, target_is_enemy_unit = self.select_target()
+            cy: Unit
+            for cy in cy:
+                # Order the BC to attack-move the target
+                if target_is_enemy_unit and (cy.is_idle or cy.is_moving):
+                    cy.attack(target)
+                # Order the BC to move to the target, and once the select_target returns an attack-target, change it to attack-move
+                elif cy.is_idle:
+                    cy.move(target)
 
 
         # Add this instance variable outside the loop
