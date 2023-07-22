@@ -286,7 +286,7 @@ class BCRushBot(BotAI):
             for th in self.townhalls.idle:
                 th.train(UnitTypeId.SCV)
             # Loop through all idle barracks
-        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 15:
+        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 10:
             for f in self.structures(UnitTypeId.FACTORY).idle:
                 self.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
