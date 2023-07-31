@@ -123,10 +123,10 @@ class BCRushBot(BotAI):
 
         if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
             enemy_structures = self.enemy_structures
-            if not enemy_structures:  # Check if there are no enemy structures
-                for sp in self.structures(UnitTypeId.BARRACKS).idle:
-                    sp.train(UnitTypeId.REAPER)
-                    sp.move(random.choice(self.enemy_start_locations))
+             # Check if there are no enemy structures
+            for sp in self.structures(UnitTypeId.BARRACKS).idle:
+                sp.train(UnitTypeId.REAPER)
+                sp.move(random.choice(self.enemy_start_locations))
         # else:
         #         # Build Marines instead
         #     if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
@@ -286,7 +286,7 @@ class BCRushBot(BotAI):
             for th in self.townhalls.idle:
                 th.train(UnitTypeId.SCV)
             # Loop through all idle barracks
-        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 10:
+        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 20:
             for f in self.structures(UnitTypeId.FACTORY).idle:
                 self.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
@@ -473,7 +473,7 @@ def main():
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
             Computer(Race.Terran, Difficulty.VeryHard),
-            Computer(Race.Protoss, Difficulty.VeryHard),
+            #Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
             Computer(Race.Zerg, Difficulty.VeryHard),
         ],
