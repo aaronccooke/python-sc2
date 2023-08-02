@@ -178,7 +178,7 @@ class BCRushBot(BotAI):
 
         # Build barracks if we have none
         if self.tech_requirement_progress(UnitTypeId.BARRACKS) == 1:
-            if self.can_afford(UnitTypeId.BARRACKS) and self.structures(UnitTypeId.BARRACKS).amount < 10:
+            if self.can_afford(UnitTypeId.BARRACKS) and self.structures(UnitTypeId.BARRACKS).amount < 1:
                 await self.build(UnitTypeId.BARRACKS, near=cc.position.towards(self.game_info.map_center, 8))
 
             # Build refineries
@@ -201,7 +201,7 @@ class BCRushBot(BotAI):
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 
 
-                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 4:
+                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 10:
                     await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
             
             f: Unit
