@@ -108,7 +108,7 @@ class BCRushBot(BotAI):
                 elif tank.is_idle:
                     tank.move(target)
         # Build more SCVs until 22
-        if self.can_afford(UnitTypeId.SCV) and self.supply_workers < 22 and cc.is_idle:
+        if self.can_afford(UnitTypeId.SCV) and self.supply_workers < 40 and cc.is_idle:
             cc.train(UnitTypeId.SCV)
 
         building_bcs = self.units(UnitTypeId.BATTLECRUISER).not_ready
@@ -121,19 +121,19 @@ class BCRushBot(BotAI):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
 
-        if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
-            enemy_structures = self.enemy_structures
-             # Check if there are no enemy structures
-            for sp in self.structures(UnitTypeId.BARRACKS).idle:
-                sp.train(UnitTypeId.REAPER)
-                sp.move(random.choice(self.enemy_start_locations))
-        # else:
-        #         # Build Marines instead
-        #     if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
-        #         for rax in self.structures(UnitTypeId.BARRACKS).idle:
-        #             if not self.can_afford(UnitTypeId.MARINE):
-        #                 break
-        #             rax.train(UnitTypeId.MARINE)
+        # if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
+        #     enemy_structures = self.enemy_structures
+        #      # Check if there are no enemy structures
+        #     for sp in self.structures(UnitTypeId.BARRACKS).idle:
+        #         sp.train(UnitTypeId.REAPER)
+        #         sp.move(random.choice(self.enemy_start_locations))
+    
+            # Build Marines instead
+        if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
+            for rax in self.structures(UnitTypeId.BARRACKS).idle:
+                if not self.can_afford(UnitTypeId.MARINE):
+                    break
+                rax.train(UnitTypeId.MARINE)
         engineeringbay: Units = self.structures(UnitTypeId.ENGINEERINGBAY)
         if not engineeringbay:
             if self.can_afford(UnitTypeId.ENGINEERINGBAY):
@@ -178,9 +178,8 @@ class BCRushBot(BotAI):
 
         # Build barracks if we have none
         if self.tech_requirement_progress(UnitTypeId.BARRACKS) == 1:
-            if not self.structures(UnitTypeId.BARRACKS):
-                if self.can_afford(UnitTypeId.BARRACKS):
-                    await self.build(UnitTypeId.BARRACKS, near=cc.position.towards(self.game_info.map_center, 8))
+            if self.can_afford(UnitTypeId.BARRACKS) and self.structures(UnitTypeId.BARRACKS).amount < 10:
+                await self.build(UnitTypeId.BARRACKS, near=cc.position.towards(self.game_info.map_center, 8))
 
             # Build refineries
             elif self.structures(UnitTypeId.BARRACKS) and self.gas_buildings.amount < 8:
@@ -202,7 +201,7 @@ class BCRushBot(BotAI):
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 
 
-                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 1:
+                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 4:
                     await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
             
             f: Unit
@@ -278,8 +277,8 @@ class BCRushBot(BotAI):
         # Stop scv production when barracks is complete but we still have a command center (priotize morphing to orbital command)
     # pylint: disable=R0916
         if (
-            self.can_afford(UnitTypeId.SCV) and self.supply_left > 0 and self.supply_workers < 22 and (
-                self.structures(UnitTypeId.FACTORY).ready.amount < 1 and self.townhalls(UnitTypeId.COMMANDCENTER).idle
+            self.can_afford(UnitTypeId.SCV) and self.supply_left > 0 and self.supply_workers < 40 and (
+                self.structures(UnitTypeId.FACTORY).ready.amount < 4 and self.townhalls(UnitTypeId.COMMANDCENTER).idle
                 or self.townhalls(UnitTypeId.ORBITALCOMMAND).idle
             )
         ):
@@ -473,7 +472,7 @@ def main():
             Bot(Race.Terran, BCRushBot()),
             #Bot(Race.Terran, BCRushBot()),
             Computer(Race.Terran, Difficulty.VeryHard),
-            #Computer(Race.Protoss, Difficulty.VeryHard),
+            Computer(Race.Protoss, Difficulty.VeryHard),
             #Computer(Race.Zerg, Difficulty.VeryHard),
             Computer(Race.Zerg, Difficulty.VeryHard),
         ],
