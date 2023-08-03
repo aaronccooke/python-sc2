@@ -121,15 +121,15 @@ class BCRushBot(BotAI):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
 
-        # if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
-        #     enemy_structures = self.enemy_structures
-        #      # Check if there are no enemy structures
-        #     for sp in self.structures(UnitTypeId.BARRACKS).idle:
-        #         sp.train(UnitTypeId.REAPER)
-        #         sp.move(random.choice(self.enemy_start_locations))
+        if self.can_afford(UnitTypeId.REAPER) and self.units(UnitTypeId.REAPER).amount < 1:
+            enemy_structures = self.enemy_structures
+             # Check if there are no enemy structures
+            for sp in self.structures(UnitTypeId.BARRACKS).idle:
+                sp.train(UnitTypeId.REAPER)
+                sp.move(random.choice(self.enemy_start_locations))
     
             # Build Marines instead
-        if self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
+        elif self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
             for rax in self.structures(UnitTypeId.BARRACKS).idle:
                 if not self.can_afford(UnitTypeId.MARINE):
                     break
@@ -201,7 +201,7 @@ class BCRushBot(BotAI):
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 
 
-                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 10:
+                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 5:
                     await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
             
             f: Unit
@@ -231,7 +231,7 @@ class BCRushBot(BotAI):
                 elif (
                     factories.ready
                     and self.structures.of_type({UnitTypeId.STARPORT, UnitTypeId.STARPORTFLYING}).ready.amount +
-                    self.already_pending(UnitTypeId.STARPORT) < 4
+                    self.already_pending(UnitTypeId.STARPORT) < 5
                 ):
                     if self.can_afford(UnitTypeId.STARPORT):
                         await self.build(
@@ -291,21 +291,21 @@ class BCRushBot(BotAI):
                             # Reaper micro
         enemies: Units = self.enemy_units | self.enemy_structures
         enemies_can_attack: Units = enemies.filter(lambda unit: unit.can_attack_ground)
-        if self.can_afford(UnitTypeId.CYCLONE):
-                for f in self.structures(UnitTypeId.FACTORY).idle:
-                    self.train(UnitTypeId.CYCLONE)
-                            # Reaper micro
-        cy: Units = self.units(UnitTypeId.CYCLONE)
-        if cy:
-            target, target_is_enemy_unit = self.select_target()
-            cy: Unit
-            for cy in cy:
-                # Order the BC to attack-move the target
-                if target_is_enemy_unit and (cy.is_idle or cy.is_moving):
-                    cy.attack(target)
-                # Order the BC to move to the target, and once the select_target returns an attack-target, change it to attack-move
-                elif cy.is_idle:
-                    cy.move(target)
+        # if self.can_afford(UnitTypeId.CYCLONE):
+        #         for f in self.structures(UnitTypeId.FACTORY).idle:
+        #             self.train(UnitTypeId.CYCLONE)
+        #                     # Reaper micro
+        # cy: Units = self.units(UnitTypeId.CYCLONE)
+        # if cy:
+        #     target, target_is_enemy_unit = self.select_target()
+        #     cy: Unit
+        #     for cy in cy:
+        #         # Order the BC to attack-move the target
+        #         if target_is_enemy_unit and (cy.is_idle or cy.is_moving):
+        #             cy.attack(target)
+        #         # Order the BC to move to the target, and once the select_target returns an attack-target, change it to attack-move
+        #         elif cy.is_idle:
+        #             cy.move(target)
 
 
         # Add this instance variable outside the loop
