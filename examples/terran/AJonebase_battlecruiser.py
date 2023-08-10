@@ -120,18 +120,18 @@ class BCRushBot(BotAI):
                         if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
-            # elif self.structures(UnitTypeId.STARPORTTECHLAB) and self.can_afford(UnitTypeId.BANSHEE).amount < 1:
-            #     for sp in self.structures(UnitTypeId.STARPORT).idle:
-            #         if sp.has_add_on:
-            #             if not self.can_afford(UnitTypeId.BANSHEE):
-            #                 break
-            #             sp.train(UnitTypeId.BANSHEE)
-        # if self.can_afford(UnitTypeId.VIKINGFIGHTER):
-        #     for sp in self.structures(UnitTypeId.STARPORT).idle:
-        #         if sp.has_add_on:
-        #             if not self.can_afford(UnitTypeId.VIKINGFIGHTER):
-        #                 break
-        #             sp.train(UnitTypeId.VIKINGFIGHTER)
+            elif self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.BANSHEE).amount < 5:
+                for sp in self.structures(UnitTypeId.STARPORT).idle:
+                    if sp.has_add_on:
+                        if not self.can_afford(UnitTypeId.BANSHEE):
+                            break
+                        sp.train(UnitTypeId.BANSHEE)
+        if self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.VIKINGFIGHTER).amount < 1:
+            for sp in self.structures(UnitTypeId.STARPORT).idle:
+                if sp.has_add_on:
+                    if not self.can_afford(UnitTypeId.VIKINGFIGHTER):
+                        break
+                    sp.train(UnitTypeId.VIKINGFIGHTER)
         # vi: Units = self.units(UnitTypeId.VIKINGFIGHTER)
         # if vi:
         #     target, target_is_enemy_unit = self.select_target()
@@ -163,7 +163,7 @@ class BCRushBot(BotAI):
                 sp.move(random.choice(self.enemy_start_locations))
     
             # Build Marines instead
-        elif self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 5:
+        elif self.can_afford(UnitTypeId.MARINE) and self.units(UnitTypeId.MARINE).amount < 20:
             for rax in self.structures(UnitTypeId.BARRACKS).idle:
                 if not self.can_afford(UnitTypeId.MARINE):
                     break
@@ -235,7 +235,7 @@ class BCRushBot(BotAI):
             if self.tech_requirement_progress(UnitTypeId.FACTORY) == 1:
                 
 
-                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 5:
+                if self.can_afford(UnitTypeId.FACTORY) and self.structures(UnitTypeId.FACTORY).amount < 2:
                     await self.build(UnitTypeId.FACTORY, near=cc.position.towards(self.game_info.map_center, 8))
             
             f: Unit
@@ -265,7 +265,7 @@ class BCRushBot(BotAI):
                 elif (
                     factories.ready
                     and self.structures.of_type({UnitTypeId.STARPORT, UnitTypeId.STARPORTFLYING}).ready.amount +
-                    self.already_pending(UnitTypeId.STARPORT) < 5
+                    self.already_pending(UnitTypeId.STARPORT) < 7
                 ):
                     if self.can_afford(UnitTypeId.STARPORT):
                         await self.build(
