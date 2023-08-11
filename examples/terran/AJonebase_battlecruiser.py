@@ -120,18 +120,24 @@ class BCRushBot(BotAI):
                         if not self.can_afford(UnitTypeId.BATTLECRUISER):
                             break
                         sp.train(UnitTypeId.BATTLECRUISER)
-            elif self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.BANSHEE).amount < 5:
-                for sp in self.structures(UnitTypeId.STARPORT).idle:
-                    if sp.has_add_on:
-                        if not self.can_afford(UnitTypeId.BANSHEE):
-                            break
-                        sp.train(UnitTypeId.BANSHEE)
-        if self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.VIKINGFIGHTER).amount < 1:
-            for sp in self.structures(UnitTypeId.STARPORT).idle:
-                if sp.has_add_on:
-                    if not self.can_afford(UnitTypeId.VIKINGFIGHTER):
-                        break
-                    sp.train(UnitTypeId.VIKINGFIGHTER)
+        #     elif self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.BANSHEE).amount < 2:
+        #         for sp in self.structures(UnitTypeId.STARPORT).idle:
+        #             if sp.has_add_on:
+        #                 if not self.can_afford(UnitTypeId.BANSHEE):
+        #                     break
+        #                 sp.train(UnitTypeId.BANSHEE)
+        # if self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.VIKINGFIGHTER).amount < 1:
+        #     for sp in self.structures(UnitTypeId.STARPORT).idle:
+        #         if sp.has_add_on:
+        #             if not self.can_afford(UnitTypeId.VIKINGFIGHTER):
+        #                 break
+        #             sp.train(UnitTypeId.VIKINGFIGHTER)
+        # if self.structures(UnitTypeId.STARPORTTECHLAB) and self.units(UnitTypeId.MEDIVAC).amount < 1:
+        #     for sp in self.structures(UnitTypeId.STARPORT).idle:
+        #         if sp.has_add_on:
+        #             if not self.can_afford(UnitTypeId.MEDIVAC):
+        #                 break
+        #             sp.train(UnitTypeId.MEDIVAC)
         # vi: Units = self.units(UnitTypeId.VIKINGFIGHTER)
         # if vi:
         #     target, target_is_enemy_unit = self.select_target()
@@ -319,27 +325,27 @@ class BCRushBot(BotAI):
             for th in self.townhalls.idle:
                 th.train(UnitTypeId.SCV)
             # Loop through all idle barracks
-        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK).amount < 20:
+        if self.can_afford(UnitTypeId.SIEGETANK) and self.units(UnitTypeId.SIEGETANK):
             for f in self.structures(UnitTypeId.FACTORY).idle:
                 self.train(UnitTypeId.SIEGETANK)
                             # Reaper micro
         enemies: Units = self.enemy_units | self.enemy_structures
         enemies_can_attack: Units = enemies.filter(lambda unit: unit.can_attack_ground)
-        if self.can_afford(UnitTypeId.CYCLONE):
-                for f in self.structures(UnitTypeId.FACTORY).idle:
-                    self.train(UnitTypeId.CYCLONE)
-                            # Reaper micro
-        cy: Units = self.units(UnitTypeId.CYCLONE)
-        if cy:
-            target, target_is_enemy_unit = self.select_target()
-            cy: Unit
-            for cy in cy:
-                # Order the BC to attack-move the target
-                if target_is_enemy_unit and (cy.is_idle or cy.is_moving):
-                    cy.attack(target)
-                # Order the BC to move to the target, and once the select_target returns an attack-target, change it to attack-move
-                elif cy.is_idle:
-                    cy.move(target)
+        # if self.can_afford(UnitTypeId.CYCLONE):
+        #         for f in self.structures(UnitTypeId.FACTORY).idle:
+        #             self.train(UnitTypeId.CYCLONE)
+        #                     # Reaper micro
+        # cy: Units = self.units(UnitTypeId.CYCLONE)
+        # if cy:
+        #     target, target_is_enemy_unit = self.select_target()
+        #     cy: Unit
+        #     for cy in cy:
+        #         # Order the BC to attack-move the target
+        #         if target_is_enemy_unit and (cy.is_idle or cy.is_moving):
+        #             cy.attack(target)
+        #         # Order the BC to move to the target, and once the select_target returns an attack-target, change it to attack-move
+        #         elif cy.is_idle:
+        #             cy.move(target)
 
 
         # Add this instance variable outside the loop
